@@ -1,122 +1,101 @@
-import { setItem, getItem } from './localStorage';
-
-const CARRITO_KEY = 'carrito';
-const GUARDADOS_KEY = 'guardados';
+const API_URL = "http://localhost:3000/api/carrito";
 
 export const carritoService = {
-  // Obtener todos los productos del carrito
-  obtenerCarrito: () => {
-    return getItem(CARRITO_KEY) || [];
-  },
-
-  // Obtener productos guardados
-  obtenerGuardados: () => {
-    return getItem(GUARDADOS_KEY) || [];
-  },
-
-  // Agregar o actualizar producto en el carrito
-  agregarProducto: (producto, cantidad) => {
-    const carrito = carritoService.obtenerCarrito();
-    const productoExistente = carrito.find(p => p.id === producto.id);
-
-    if (productoExistente) {
-      productoExistente.cantidad += cantidad;
-    } else {
-      carrito.push({ ...producto, cantidad });
+  // 🔄 Obtener productos del carrito desde la base de datos
+  obtenerCarritoDesdeAPI: async (usuarioId) => {
+    try {
+      const res = await fetch(`${API_URL}/${usuarioId}`);
+      if (!res.ok) throw new Error("Error al obtener carrito");
+      return await res.json();
+    } catch (err) {
+      console.error("Error en obtenerCarritoDesdeAPI:", err);
+      return [];
     }
-
-    setItem(CARRITO_KEY, carrito);
-    return carrito;
   },
 
-  // Eliminar producto del carrito
-  eliminarProducto: (productoId) => {
-    const carrito = carritoService.obtenerCarrito();
-    const nuevoCarrito = carrito.filter(p => p.id !== productoId);
-    setItem(CARRITO_KEY, nuevoCarrito);
-    return nuevoCarrito;
-  },
-
-  // Actualizar cantidad de un producto
-  actualizarCantidad: (productoId, cantidad) => {
-    const carrito = carritoService.obtenerCarrito();
-    const producto = carrito.find(p => p.id === productoId);
-    
-    if (producto) {
-      producto.cantidad = cantidad;
-      setItem(CARRITO_KEY, carrito);
+  // 📦 Obtener productos guardados para después
+  obtenerGuardadosDesdeAPI: async (usuarioId) => {
+    try {
+      const res = await fetch(`${API_URL}/${usuarioId}/guardados`);
+      if (!res.ok) throw new Error("Error al obtener guardados");
+      return await res.json();
+    } catch (err) {
+      console.error("Error en obtenerGuardadosDesdeAPI:", err);
+      return [];
     }
-    return carrito;
   },
 
-  // Vaciar el carrito
-  vaciarCarrito: () => {
-    setItem(CARRITO_KEY, []);
-    return [];
-  },
-
-  // Mover producto a guardados
-  moverAGuardados: (productoId) => {
-    const carrito = carritoService.obtenerCarrito();
-    const guardados = carritoService.obtenerGuardados();
-    const producto = carrito.find(p => p.id === productoId);
-
-    if (producto) {
-      // Remover del carrito
-      const nuevoCarrito = carrito.filter(p => p.id !== productoId);
-      setItem(CARRITO_KEY, nuevoCarrito);
-
-      // Agregar a guardados si no existe
-      if (!guardados.find(p => p.id === productoId)) {
-        guardados.push(producto);
-        setItem(GUARDADOS_KEY, guardados);
-      }
+  // 🔁 Actualizar la cantidad de un producto en el carrito
+  actualizarCantidad: async (itemCarritoId, nuevaCantidad) => {
+    try {
+      const res = await fetch(`${API_URL}/${itemCarritoId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ cantidad: nuevaCantidad }),
+      });
+      if (!res.ok) throw new Error("Error al actualizar cantidad");
+      return await res.json();
+    } catch (err) {
+      console.error("Error en actualizarCantidad:", err);
+      return null;
     }
-    return { carrito: carritoService.obtenerCarrito(), guardados: carritoService.obtenerGuardados() };
   },
 
-  // Devolver producto al carrito
-  devolverAlCarrito: (productoId) => {
-    const carrito = carritoService.obtenerCarrito();
-    const guardados = carritoService.obtenerGuardados();
-    const producto = guardados.find(p => p.id === productoId);
-
-    if (producto) {
-      // Remover de guardados
-      const nuevosGuardados = guardados.filter(p => p.id !== productoId);
-      setItem(GUARDADOS_KEY, nuevosGuardados);
-
-      // Agregar al carrito si no existe
-      if (!carrito.find(p => p.id === productoId)) {
-        carrito.push(producto);
-        setItem(CARRITO_KEY, carrito);
-      }
+  // 📥 Marcar producto como guardado para después
+  guardarProducto: async (itemCarritoId) => {
+    try {
+      const res = await fetch(`${API_URL}/${itemCarritoId}/guardar`, {
+        method: "PUT",
+      });
+      if (!res.ok) throw new Error("Error al guardar producto");
+      return await res.json();
+    } catch (err) {
+      console.error("Error en guardarProducto:", err);
+      return null;
     }
-    return { carrito: carritoService.obtenerCarrito(), guardados: carritoService.obtenerGuardados() };
   },
 
-  // Eliminar de guardados
-  eliminarGuardado: (productoId) => {
-    const guardados = carritoService.obtenerGuardados();
-    const nuevosGuardados = guardados.filter(p => p.id !== productoId);
-    setItem(GUARDADOS_KEY, nuevosGuardados);
-    return nuevosGuardados;
+  // ❌ Eliminar producto del carrito
+  eliminarProductoDelCarrito: async (itemCarritoId) => {
+    try {
+      const res = await fetch(`${API_URL}/${itemCarritoId}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Error al eliminar producto");
+      return await res.json();
+    } catch (err) {
+      console.error("Error en eliminarProductoDelCarrito:", err);
+      return null;
+    }
   },
 
-  // Obtener el total de productos en el carrito
-  obtenerTotal: () => {
-    const carrito = carritoService.obtenerCarrito();
-    return carrito.reduce((total, producto) => {
-      const precio = producto.descuento > 0 
-        ? producto.precio * (1 - producto.descuento)
-        : producto.precio;
-      return total + (precio * producto.cantidad);
-    }, 0);
+  // 🔄 Devolver producto guardado al carrito
+  devolverAlCarrito: async (itemCarritoId) => {
+    try {
+      const res = await fetch(`${API_URL}/${itemCarritoId}/devolver`, {
+        method: "PUT",
+      });
+      if (!res.ok) throw new Error("Error al devolver producto al carrito");
+      return await res.json();
+    } catch (err) {
+      console.error("Error en devolverAlCarrito:", err);
+      return null;
+    }
   },
 
-  // Obtener cantidad total de items
-  obtenerCantidadItems: () => {
-    const carrito = carritoService.obtenerCarrito();
-    return carrito.reduce((total, producto) => total + producto.cantidad, 0);
-  }
+  // 🗑️ Eliminar producto guardado permanentemente
+  eliminarGuardado: async (itemCarritoId) => {
+    try {
+      const res = await fetch(`${API_URL}/guardados/${itemCarritoId}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Error al eliminar guardado");
+      return await res.json();
+    } catch (err) {
+      console.error("Error en eliminarGuardado:", err);
+      return null;
+    }
+  },
 };

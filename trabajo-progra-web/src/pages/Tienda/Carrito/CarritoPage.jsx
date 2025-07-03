@@ -8,20 +8,37 @@ import { FaShoppingCart, FaTruck, FaCreditCard } from 'react-icons/fa';
 import { useAuth } from '../../../context/AuthContext';
 
 const CarritoPage = () => {
-  const navigate = useNavigate(); // navegar a otras paginas desde el componente
+  const navigate = useNavigate();
   const { usuario } = useAuth();
   // variables de estado que se inicializan en 0
-  const [total, setTotal] = useState(0);  // suma total en soles con descuento
-  const [totalProductos, setTotalProductos] = useState(0); // suma total de productoss
-  const [totalDescuento, setTotalDescuento] = useState(0); // suma total de descuentos
-  const [cantidadItems, setCantidadItems] = useState(0); // cantidad total de productos
+  const [total, setTotal] = useState(0);
+  const [totalProductos, setTotalProductos] = useState(0);
+  const [totalDescuento, setTotalDescuento] = useState(0);
+  const [cantidadItems, setCantidadItems] = useState(0);
+  const [loading, setLoading] = useState(true); // Estado para manejar la carga
 
   // se ejecuta una sola vez al inicio
   useEffect(() => {
-    // Obtener el carrito usando el servicio
-    const carrito = carritoService.obtenerCarrito(); // lee los productos del carrito
-    setCantidadItems(carrito.length); // actualiza la cantidad de productos
-  }, []);
+    const cargarCarrito = async () => {
+      try {
+        if (usuario && usuario.id) {
+          // Obtener el carrito usando el servicio correcto
+          const carrito = await carritoService.obtenerCarritoDesdeAPI(usuario.id);
+          setCantidadItems(carrito.length);
+        } else {
+          // Si no hay usuario, el carrito está vacío
+          setCantidadItems(0);
+        }
+      } catch (error) {
+        console.error('Error al cargar el carrito:', error);
+        setCantidadItems(0);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    cargarCarrito();
+  }, [usuario]);
 
   const handleProcederPago = () => {
     if (!usuario) {
@@ -31,6 +48,18 @@ const CarritoPage = () => {
     }
     navigate('/tienda/checkout/direccion');
   };
+
+  // Mostrar loading mientras se carga el carrito
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-[#FE624C] mx-auto"></div>
+          <p className="mt-4 text-gray-600">Cargando carrito...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-100">
