@@ -1,0 +1,16 @@
+@import "tailwindcss";
+
+.checkout-container {
+  background-color: white;
+  min-height: 100vh;
+  padding: 20px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column; /* Primero la navbar, luego el contenido */
+}
+
+.checkout-content {
+  display: flex;
+  justify-content: flex-end; /* Alinea el contenido a la derecha */
+  flex: 1; /* Ocupa el espacio restante debajo del navbar */
+}

@@ -1,0 +1,126 @@
+/* Estilos generales del navbar */
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background-color: #FE624C;
+  color: white;
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 1000;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Sección izquierda */
+.navbar-left {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.navbar-logo {
+  color: white;
+  text-decoration: none;
+}
+
+.navbar-links {
+  display: flex;
+  gap: 1.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.navbar-links li a,
+.navbar-links li span {
+  color: white;
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.navbar-links li a:hover,
+.navbar-links li span:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.navbar-center {
+  flex: 1;
+  max-width: 600px;
+  margin: 0 2rem;
+}
+
+.navbar-search {
+  width: 100%;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 20px;
+  background-color: rgba(255, 255, 255, 0.9);
+  color: #333;
+}
+
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.navbar-right a,
+.navbar-right button {
+  color: white;
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.navbar-right a:hover,
+.navbar-right button:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+/* Dropdown de categorías */
+.navbar-categorias-dropdown {
+  position: relative;
+}
+
+.dropdown-menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: #FE624C;
+  min-width: 200px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  padding: 0.5rem 0;
+  z-index: 1000;
+}
+
+.navbar-categorias-dropdown:hover .dropdown-menu {
+  display: block;
+}
+
+.dropdown-menu li {
+  padding: 0.5rem 1rem;
+}
+
+.dropdown-menu li a {
+  display: block;
+  color: white;
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.dropdown-menu li a:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: white;
+}
