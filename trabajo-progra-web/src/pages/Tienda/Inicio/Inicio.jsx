@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import ProductoCard from '../../../components/ProductoCard';
-import { cargarProductos } from '../../../services/productos';
+import { productoService } from '../../../services/productoService';
 
 // Datos simulados para series
 
@@ -56,7 +56,7 @@ const Inicio = () => {
     const cargarProductosInicio = async () => {
       try {
         setLoading(true);
-        const productos = await cargarProductos();
+        const productos = await productoService.obtenerTodos();
         
         // Tomar los primeros 12 productos para más vendidos
         setProductosMasVendidos(productos.slice(0, 12));
