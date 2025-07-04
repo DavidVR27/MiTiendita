@@ -1,22 +1,39 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { carritoService } from '../services/carritoService';
+import { useAuth } from '../context/AuthContext';
 import './ProductoCard.css';
 
 const ProductoCard = ({ producto }) => {
   const [cantidad, setCantidad] = useState(1);
   const [mostrarCantidad, setMostrarCantidad] = useState(false);
+  const { usuario } = useAuth();
+  const navigate = useNavigate();
+
+  // Defensive check for price
+  const precioValido = typeof producto.precio === 'number' || (typeof producto.precio === 'string' && !isNaN(parseFloat(producto.precio)));
+  const precio = precioValido ? parseFloat(producto.precio) : 0;
 
   const precioConDescuento = producto.descuento > 0
-    ? producto.precio * (1 - producto.descuento)
-    : producto.precio;
+    ? precio * (1 - producto.descuento)
+    : precio;
 
-  const agregarAlCarrito = (e) => {
+  const agregarAlCarrito = async (e) => {
     e.preventDefault();
-    carritoService.agregarProducto(producto, cantidad);
-    alert('Producto agregado al carrito');
-    setCantidad(1);
-    setMostrarCantidad(false);
+    if (!usuario) {
+      alert('Debes iniciar sesión para agregar productos al carrito.');
+      navigate('/login');
+      return;
+    }
+
+    try {
+      await carritoService.agregarProducto(producto, cantidad, usuario.id);
+      alert('Producto agregado al carrito');
+      setCantidad(1);
+      setMostrarCantidad(false);
+    } catch (error) {
+      alert(`Error: ${error.message}`);
+    }
   };
 
   const iniciarAgregarAlCarrito = (e) => {
@@ -41,11 +58,11 @@ const ProductoCard = ({ producto }) => {
           <div className="producto-precio">
             {producto.descuento > 0 ? (
               <>
-                <span className="precio-original">S/ {producto.precio.toFixed(2)}</span>
+                <span className="precio-original">S/ {precio.toFixed(2)}</span>
                 <span className="precio-descuento">S/ {precioConDescuento.toFixed(2)}</span>
               </>
             ) : (
-              <span className="precio-normal">S/ {producto.precio.toFixed(2)}</span>
+              <span className="precio-normal">S/ {precio.toFixed(2)}</span>
             )}
           </div>
         </div>

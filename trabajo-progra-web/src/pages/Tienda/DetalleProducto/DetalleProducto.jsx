@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { obtenerProductoPorId } from '../../../services/productos';
+import { productoService } from '../../../services/productoService';
 import { carritoService } from '../../../services/carritoService';
 import './DetalleProducto.css';
 
@@ -15,7 +15,7 @@ const DetalleProducto = () => {
     const cargarProducto = async () => {
       try {
         setLoading(true);
-        const data = await obtenerProductoPorId(id);
+        const data = await productoService.obtenerProductoPorId(id);
         if (data) {
           setProducto(data);
           setError(null);
@@ -34,8 +34,10 @@ const DetalleProducto = () => {
   }, [id]);
 
   const agregarAlCarrito = () => {
-    carritoService.agregarProducto(producto, cantidad);
-    alert('Producto agregado al carrito');
+    if (producto) {
+      carritoService.agregarProducto(producto, cantidad);
+      alert('Producto agregado al carrito');
+    }
   };
 
   if (loading) {
@@ -50,6 +52,13 @@ const DetalleProducto = () => {
     return <div className="error">Producto no encontrado</div>;
   }
 
+  const precioValido = typeof producto.precio === 'number' || (typeof producto.precio === 'string' && !isNaN(parseFloat(producto.precio)));
+  const precio = precioValido ? parseFloat(producto.precio) : 0;
+
+  const precioConDescuento = producto.descuento > 0
+    ? precio * (1 - producto.descuento / 100)
+    : precio;
+
   return (
     <div className="detalle-producto">
       <div className="producto-imagen">
@@ -61,13 +70,13 @@ const DetalleProducto = () => {
         <div className="precio">
           {producto.descuento > 0 ? (
             <>
-              <span className="precio-original">S/ {producto.precio}</span>
+              <span className="precio-original">S/ {precio.toFixed(2)}</span>
               <span className="precio-descuento">
-                S/ {(producto.precio * (1 - producto.descuento / 100)).toFixed(2)}
+                S/ {precioConDescuento.toFixed(2)}
               </span>
             </>
           ) : (
-            <span className="precio-normal">S/ {producto.precio}</span>
+            <span className="precio-normal">S/ {precio.toFixed(2)}</span>
           )}
         </div>
         <div className="cantidad">

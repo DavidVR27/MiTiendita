@@ -1,6 +1,33 @@
 const API_URL = "http://localhost:3000/api/carrito";
 
 export const carritoService = {
+  // ➕ Agregar un producto al carrito
+  agregarProducto: async (producto, cantidad, usuarioId) => {
+    try {
+      const res = await fetch(API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          usuarioId: usuarioId,
+          productoId: producto.id,
+          cantidad: cantidad,
+        }),
+      });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(
+          errorData.error || "Error al agregar producto al carrito"
+        );
+      }
+      return await res.json();
+    } catch (err) {
+      console.error("Error en agregarProducto:", err);
+      throw err;
+    }
+  },
+
   // 🔄 Obtener productos del carrito desde la base de datos
   obtenerCarritoDesdeAPI: async (usuarioId) => {
     try {

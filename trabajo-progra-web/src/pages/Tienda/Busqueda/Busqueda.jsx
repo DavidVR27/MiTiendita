@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { buscarProductos } from '../../../services/productos';
+import { productoService } from '../../../services/productoService';
 import ProductoCard from '../../../components/ProductoCard';
 import './Busqueda.css';
 
@@ -16,7 +16,14 @@ const Busqueda = () => {
         setLoading(true);
         const termino = searchParams.get('q') || '';
         const categoria = searchParams.get('categoria') || '';
-        const resultados = await buscarProductos(termino, categoria);
+        
+        const todosLosProductos = await productoService.obtenerProductos();
+        
+        const resultados = todosLosProductos.filter(p => 
+          (!termino || p.nombre.toLowerCase().includes(termino.toLowerCase())) &&
+          (!categoria || p.categoria === categoria)
+        );
+
         setProductos(resultados);
         setError(null);
       } catch (err) {

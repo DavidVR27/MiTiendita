@@ -56,7 +56,7 @@ const Inicio = () => {
     const cargarProductosInicio = async () => {
       try {
         setLoading(true);
-        const productos = await productoService.obtenerTodos();
+        const productos = await productoService.obtenerProductos();
         
         // Tomar los primeros 12 productos para más vendidos
         setProductosMasVendidos(productos.slice(0, 12));
