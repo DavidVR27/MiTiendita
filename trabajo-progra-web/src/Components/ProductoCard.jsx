@@ -52,6 +52,7 @@ const ProductoCard = ({ producto }) => {
         </div>
         <div className="producto-info">
           <h3 className="producto-nombre">{producto.nombre}</h3>
+          <p className="producto-descripcion">{producto.descripcion}</p>
           {producto.categoria && (
             <span className="producto-categoria">{producto.categoria}</span>
           )}

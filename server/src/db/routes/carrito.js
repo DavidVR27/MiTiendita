@@ -35,12 +35,22 @@ router.get("/:usuarioId/guardados", async (req, res) => {
 router.post("/", async (req, res) => {
   try {
     const { usuarioId, productoId, cantidad } = req.body;
-    const item = await ItemCarrito.create({
-      usuarioId,
-      productoId,
-      cantidad,
-      guardado: false,
+
+    // Buscar si ya existe un item para este usuario y producto
+    const [item, creado] = await ItemCarrito.findOrCreate({
+      where: { usuarioId, productoId, guardado: false },
+      defaults: { cantidad: cantidad },
     });
+
+    console.log("Item:", item.toJSON());
+    console.log("Creado:", creado);
+
+    // Si no fue creado, significa que ya existía, entonces actualizamos la cantidad
+    if (!creado) {
+      item.cantidad += cantidad;
+      await item.save();
+    }
+
     res.status(201).json(item);
   } catch (err) {
     console.error("Error al agregar producto al carrito:", err);

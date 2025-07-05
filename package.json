@@ -1,0 +1,21 @@
+{
+  "name": "tienda-en-linea",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "backend": "cd server && npm run backend",
+    "frontend": "cd trabajo-progra-web && npm run dev"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DavidVR27/MiTiendita.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/DavidVR27/MiTiendita/issues"
+  },
+  "homepage": "https://github.com/DavidVR27/MiTiendita#readme",
+  "description": ""
+}
