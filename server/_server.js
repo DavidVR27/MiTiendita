@@ -17,6 +17,12 @@ app.use("/api/carrito", require("./src/db/routes/carrito"));
 // Aquí conectas tu ruta de productos ✅
 app.use("/api/productos", require("./src/db/routes/producto"));
 
+// Aquí conectas tu ruta de autenticación ✅
+app.use("/api/auth", require("./src/db/routes/auth"));  
+
+// Aquí conectas tu ruta de usuarios ✅
+app.use("/api/users", require("./src/db/routes/users"));  
+
 // Inicia servidor y sincroniza base de datos
 db.sequelize.sync().then(() => {
   console.log("Base de datos sincronizada");
