@@ -7,6 +7,15 @@ require("dotenv").config();
 
 const db = require("./src/db/models");
 
+// Middleware para configurar la Política de Seguridad de Contenido (CSP)
+app.use((req, res, next) => {
+  res.setHeader(
+    "Content-Security-Policy",
+    "default-src 'self'; img-src 'self' http://localhost:3000; script-src 'self' 'unsafe-inline';"
+  );
+  next();
+});
+
 // Middleware
 app.use(cors()); // Permite solicitudes desde otros dominios
 app.use(bodyParser.json());
