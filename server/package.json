@@ -4,6 +4,7 @@
   "description": "backend de  mi-tiendita",
   "main": "index.js",
   "scripts": {
+    "start": "node _server.js",
     "backend": "nodemon _server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

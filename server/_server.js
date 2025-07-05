@@ -26,6 +26,9 @@ app.use("/api/carrito", require("./src/db/routes/carrito"));
 // Aquí conectas tu ruta de productos ✅
 app.use("/api/productos", require("./src/db/routes/producto"));
 
+// Ruta para órdenes
+app.use("/api/ordenes", require("./src/db/routes/orden"));
+
 // Inicia servidor y sincroniza base de datos
 db.sequelize.sync().then(() => {
   console.log("Base de datos sincronizada");

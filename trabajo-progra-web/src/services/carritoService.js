@@ -126,4 +126,17 @@ export const carritoService = {
       return null;
     }
   },
+
+  // --- Funciones para Local Storage ---
+
+  // 📦 Obtener el carrito desde localStorage
+  obtenerCarrito: () => {
+    const carrito = localStorage.getItem('carrito');
+    return carrito ? JSON.parse(carrito) : [];
+  },
+
+  // 🗑️ Vaciar el carrito en localStorage
+  vaciarCarrito: () => {
+    localStorage.removeItem('carrito');
+  },
 };

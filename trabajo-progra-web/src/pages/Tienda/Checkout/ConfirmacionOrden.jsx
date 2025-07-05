@@ -3,64 +3,58 @@ import { useNavigate } from 'react-router-dom';
 import { FaCheckCircle } from 'react-icons/fa';
 import Boton from '../../../Components/Boton';
 import { carritoService } from '../../../services/carritoService';
+import { ordenService } from '../../../services/ordenService';
 
 const ConfirmacionOrden = () => {
     const navigate = useNavigate();
     const [error, setError] = useState("");
 
     useEffect(() => {
-        // Obtener datos necesarios del localStorage
-        const carrito = carritoService.obtenerCarrito();
-        const datosEnvio = JSON.parse(localStorage.getItem('datosEnvio') || '{}');
-        const metodoPago = localStorage.getItem('metodoPago') || 'No especificado';
-        const metodoEnvio = localStorage.getItem('metodoEnvio') || 'No especificado';
-        const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+        const crearOrden = async () => {
+            const carrito = carritoService.obtenerCarrito();
+            const datosEnvio = JSON.parse(localStorage.getItem('datosEnvio') || '{}');
+            const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
 
-        if (!usuario.correo) {
-            setError('Debes iniciar sesión para realizar un pedido.');
-            return;
-        }
+            if (!usuario || !usuario.id) {
+                setError('Debes iniciar sesión para realizar un pedido.');
+                return;
+            }
 
-        // Calcular totales
-        const total = carrito.reduce((acc, item) => {
-            const precioConDescuento = item.descuento 
-                ? item.precio * (1 - item.descuento) 
-                : item.precio;
-            return acc + (precioConDescuento * item.cantidad);
-        }, 0);
+            const total = carrito.reduce((acc, item) => {
+                const precioConDescuento = item.descuento
+                    ? item.precio * (1 - item.descuento)
+                    : item.precio;
+                return acc + (precioConDescuento * item.cantidad);
+            }, 0);
 
-        // Crear objeto de orden
-        const nuevaOrden = {
-            id: Date.now(), // Usar timestamp como ID único
-            fecha: new Date().toISOString(),
-            productos: carrito,
-            datosEnvio,
-            metodoPago,
-            metodoEnvio,
-            resumenCompra: {
-                total,
-                productos: carrito.map(item => ({
-                    nombre: item.nombre,
+            const nuevaOrden = {
+                usuarioId: usuario.id,
+                direccion: datosEnvio.direccion,
+                ciudad: datosEnvio.ciudad,
+                departamento: datosEnvio.departamento,
+                codigoPostal: datosEnvio.codigoPostal,
+                telefono: datosEnvio.telefono,
+                items: carrito.map(item => ({
+                    productoId: item.id,
                     cantidad: item.cantidad,
-                    precio: item.descuento 
-                        ? (item.precio * (1 - item.descuento)).toFixed(2)
-                        : item.precio.toFixed(2)
-                }))
-            },
-            correo: usuario.correo || "",
-            nombre: usuario.nombre || ""
+                    precio: item.descuento ? item.precio * (1 - item.descuento) : item.precio,
+                })),
+                total,
+            };
+
+            try {
+                await ordenService.crearOrden(nuevaOrden);
+                carritoService.vaciarCarrito();
+                localStorage.removeItem('datosEnvio');
+                localStorage.removeItem('metodoPago');
+                localStorage.removeItem('metodoEnvio');
+            } catch (err) {
+                setError('Hubo un error al procesar tu orden. Por favor, inténtalo de nuevo.');
+                console.error(err);
+            }
         };
 
-        // Obtener órdenes existentes y añadir la nueva
-        const ordenesExistentes = JSON.parse(localStorage.getItem('ordenes') || '[]');
-        ordenesExistentes.push(nuevaOrden);
-        localStorage.setItem('ordenes', JSON.stringify(ordenesExistentes));
-
-        // Limpiar el carrito después de guardar la orden
-        carritoService.vaciarCarrito();
-        localStorage.removeItem('datosEnvio');
-        localStorage.removeItem('metodoPago');
-        localStorage.removeItem('metodoEnvio');
+        crearOrden();
     }, []);
 
     if (error) {

@@ -56,13 +56,10 @@ const Direccion = () => {
             }
         }
 
-        // Quitar espacios al inicio y final
-        const valorSinEspacios = valorCampo.trim();
-
         // Actualizar el estado del formulario
         setFormData({
             ...formData,
-            [nombreCampo]: valorSinEspacios
+            [nombreCampo]: valorCampo
         });
     };
 
