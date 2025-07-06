@@ -12,8 +12,6 @@ router.get("/", async (req, res) => {
   }
 });
 
-// Obtener un producto por ID
-// Parte de David E
 router.get("/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -25,7 +23,7 @@ router.get("/:id", async (req, res) => {
   } catch (err) {
     console.error("Error al obtener producto por ID:", err);
     res.status(500).json({ error: "Error al obtener producto" });
-  }   
+  }
 });
 
 module.exports = router;
