@@ -13,7 +13,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-// Obtener producto
+// Obtener producto por ID
 router.get("/:id", async (req, res) => {
   try {
     const producto = await Producto.findByPk(req.params.id);
@@ -50,7 +50,7 @@ router.put("/:id", async (req, res) => {
   }
 });
 
-// Eliminar o desactivas un producto
+// Desactivar producto
 router.patch("/:id/desactivar", async (req, res) => {
   try {
     const producto = await Producto.findByPk(req.params.id);
@@ -67,3 +67,4 @@ router.patch("/:id/desactivar", async (req, res) => {
 });
 
 module.exports = router;
+

@@ -47,7 +47,7 @@ router.post("/", async (req, res) => {
   } = req.body;
 
   try {
-    // ✅ Validaciones básicas
+    // Validaciones básicas
     if (!usuarioId) {
       console.log("❌ [Ordenes] Error: Usuario ID es requerido");
       return res.status(400).json({ error: "Usuario ID es requerido" });
@@ -63,7 +63,7 @@ router.post("/", async (req, res) => {
       items.map((i) => i.productoId)
     );
 
-    // ✅ Obtener los productos desde la base de datos
+    // Obtener los productos desde la base de datos
     const productosIds = items.map((item) => item.productoId);
     const productos = await Producto.findAll({
       where: {
@@ -80,7 +80,7 @@ router.post("/", async (req, res) => {
         .json({ error: "No se encontraron productos válidos" });
     }
 
-    // ✅ Calcular total y preparar items
+    // Calcular total y preparar items
     let totalCalculado = 0;
     const itemsOrden = [];
 
@@ -96,7 +96,9 @@ router.post("/", async (req, res) => {
       const cantidad = parseInt(item.cantidad);
 
       if (isNaN(precioUnitario) || isNaN(cantidad) || cantidad <= 0) {
-        console.warn(`⚠️ [Ordenes] Datos inválidos para producto ${item.productoId}`);
+        console.warn(
+          `⚠️ [Ordenes] Datos inválidos para producto ${item.productoId}`
+        );
         continue;
       }
 
@@ -111,13 +113,13 @@ router.post("/", async (req, res) => {
     }
 
     if (itemsOrden.length === 0) {
-      console.log("❌ [Ordenes] Error: No hay items válidos para procesar");
+      console.log("[Ordenes] Error: No hay items válidos para procesar");
       return res
         .status(400)
         .json({ error: "No hay items válidos para procesar" });
     }
 
-    // ✅ Construir dirección de envío
+    // Construir dirección de envío
     const direccionEnvio = [
       direccion || "No especificado",
       ciudad || "No especificado",
@@ -131,7 +133,7 @@ router.post("/", async (req, res) => {
     console.log("💰 [Ordenes] Total calculado:", totalCalculado.toFixed(2));
     console.log("📍 [Ordenes] Dirección de envío:", direccionEnvio);
 
-    // ✅ Crear la orden (UNA SOLA VEZ)
+    // Crear la orden (UNA SOLA VEZ)
     console.log("⏳ [Ordenes] Intentando crear la orden en la DB...");
     const nuevaOrden = await Orden.create({
       usuarioId: usuarioId,
@@ -141,20 +143,20 @@ router.post("/", async (req, res) => {
       estado: estado || "Pendiente",
       total: totalCalculado.toFixed(2),
     });
-    console.log("✅ [Ordenes] Orden creada con ID:", nuevaOrden.id);
+    console.log("[Ordenes] Orden creada con ID:", nuevaOrden.id);
 
-    // ✅ Crear los items de la orden
-    console.log("⏳ [Ordenes] Intentando crear los items de la orden en la DB...");
+    // Crear los items de la orden
+    console.log("[Ordenes] Intentando crear los items de la orden en la DB...");
     const itemsConOrdenId = itemsOrden.map((item) => ({
       ...item,
       ordenId: nuevaOrden.id,
     }));
 
     const itemsCreados = await ItemOrden.bulkCreate(itemsConOrdenId);
-    console.log("✅ [Ordenes] Items creados:", itemsCreados.length);
+    console.log("[Ordenes] Items creados:", itemsCreados.length);
 
-    // ✅ Responder con la orden completa
-    console.log("⏳ [Ordenes] Obteniendo orden completa para la respuesta...");
+    // Responder con la orden completa
+    console.log("[Ordenes] Obteniendo orden completa para la respuesta...");
     const ordenCompleta = await Orden.findByPk(nuevaOrden.id, {
       include: [
         {
@@ -178,11 +180,157 @@ router.post("/", async (req, res) => {
     });
   } catch (error) {
     console.error("❌ [Ordenes] Error al crear la orden:", error);
-    console.error("❌ [Ordenes] Detalles del error:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
+    console.error(
+      "[Ordenes] Detalles del error:",
+      JSON.stringify(error, Object.getOwnPropertyNames(error))
+    );
     res.status(500).json({
       error: "Error interno del servidor",
       details: error.message,
     });
+  }
+});
+
+// Obtener todas las órdenes del usuario autenticado
+router.get("/user", async (req, res) => {
+  // Se espera que el usuarioId venga por query o por autenticación
+  const usuarioId = req.query.usuarioId || req.usuarioId;
+  if (!usuarioId) {
+    return res.status(400).json({ error: "Usuario no autenticado" });
+  }
+  try {
+    const ordenes = await Orden.findAll({
+      where: { usuarioId },
+      include: [
+        {
+          model: ItemOrden,
+          as: "items",
+          include: [
+            {
+              model: Producto,
+              as: "producto",
+            },
+          ],
+        },
+      ],
+      order: [["createdAt", "DESC"]],
+    });
+    res.json(ordenes);
+  } catch (error) {
+    console.error("Error al obtener las órdenes del usuario:", error);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
+});
+
+// Obtener detalle de una orden por ID
+router.get("/:id", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const orden = await Orden.findByPk(id, {
+      include: [
+        {
+          model: ItemOrden,
+          as: "items",
+          include: [
+            {
+              model: Producto,
+              as: "producto",
+            },
+          ],
+        },
+      ],
+    });
+    if (!orden) {
+      return res.status(404).json({ error: "Orden no encontrada" });
+    }
+    res.json(orden);
+  } catch (error) {
+    console.error("Error al obtener el detalle de la orden:", error);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
+});
+
+// Cancelar una orden
+router.put("/:id/cancel", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const orden = await Orden.findByPk(id);
+    if (!orden) {
+      return res.status(404).json({ error: "Orden no encontrada" });
+    }
+    if (orden.estado === "Cancelada") {
+      return res.status(400).json({ error: "La orden ya está cancelada" });
+    }
+    orden.estado = "Cancelada";
+    await orden.save();
+    res.json({ success: true, mensaje: "Orden cancelada exitosamente", orden });
+  } catch (error) {
+    console.error("Error al cancelar la orden:", error);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
+});
+
+// Página de pedido completo (devolver datos si la orden está completada)
+router.get("/:id/complete", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const orden = await Orden.findByPk(id, {
+      include: [
+        {
+          model: ItemOrden,
+          as: "items",
+          include: [
+            {
+              model: Producto,
+              as: "producto",
+            },
+          ],
+        },
+      ],
+    });
+    if (!orden) {
+      return res.status(404).json({ error: "Orden no encontrada" });
+    }
+    if (orden.estado !== "Completada") {
+      return res.status(400).json({ error: "La orden aún no está completada" });
+    }
+    res.json(orden);
+  } catch (error) {
+    console.error("Error al obtener la orden completada:", error);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
+});
+
+router.get("/:id/pendiente", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const orden = await Orden.findByPk(id, {
+      include: [
+        {
+          model: ItemOrden,
+          as: "items",
+          include: [
+            {
+              model: Producto,
+              as: "producto",
+            },
+          ],
+        },
+      ],
+    });
+
+    if (!orden) {
+      return res.status(404).json({ error: "Orden no encontrada" });
+    }
+
+    if (orden.estado !== "Pendiente") {
+      return res.status(400).json({ error: "La orden no está pendiente" });
+    }
+
+    res.json(orden);
+  } catch (error) {
+    console.error("Error al obtener la orden pendiente:", error);
+    res.status(500).json({ error: "Error interno del servidor" });
   }
 });
 
