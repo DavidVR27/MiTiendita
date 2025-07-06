@@ -24,7 +24,7 @@ module.exports = (sequelize, DataTypes) => {
     {
       sequelize,
       modelName: "Orden",
-      tableName: "Ordens", // ✅ Nombre exacto de tu tabla (mantener como estaba)
+      tableName: "Ordens",
     }
   );
   return Orden;

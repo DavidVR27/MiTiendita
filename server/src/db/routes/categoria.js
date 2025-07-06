@@ -28,7 +28,8 @@ router.put("/:id", async (req, res) => {
   try {
     const { nombre } = req.body;
     const categoria = await Categoria.findByPk(req.params.id);
-    if (!categoria) return res.status(404).json({ error: "Categoría no encontrada" });
+    if (!categoria)
+      return res.status(404).json({ error: "Categoría no encontrada" });
 
     categoria.nombre = nombre;
     await categoria.save();
@@ -45,7 +46,8 @@ router.post("/:id/agregar-producto", async (req, res) => {
     const categoria = await Categoria.findByPk(req.params.id);
     const producto = await Producto.findByPk(productoId);
 
-    if (!categoria || !producto) return res.status(404).json({ error: "Datos no encontrados" });
+    if (!categoria || !producto)
+      return res.status(404).json({ error: "Datos no encontrados" });
 
     await categoria.addProducto(producto); // relación N:M
     res.json({ mensaje: "Producto agregado a la categoría" });
