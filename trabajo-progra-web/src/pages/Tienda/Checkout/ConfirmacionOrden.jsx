@@ -11,7 +11,7 @@ const ConfirmacionOrden = () => {
 
     useEffect(() => {
         const crearOrden = async () => {
-            const carrito = carritoService.obtenerCarrito();
+            const carrito = carritoService.obtenerCarritoDesdeAPI(usuario.id);
             const datosEnvio = JSON.parse(localStorage.getItem('datosEnvio') || '{}');
             const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
 
@@ -35,9 +35,9 @@ const ConfirmacionOrden = () => {
                 codigoPostal: datosEnvio.codigoPostal,
                 telefono: datosEnvio.telefono,
                 items: carrito.map(item => ({
-                    productoId: item.id,
+                    productoId: item.productoId,
                     cantidad: item.cantidad,
-                    precio: item.descuento ? item.precio * (1 - item.descuento) : item.precio,
+                    precio: parseFloat(item.Producto?.precio || 0),
                 })),
                 total,
             };

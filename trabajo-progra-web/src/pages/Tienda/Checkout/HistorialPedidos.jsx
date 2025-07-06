@@ -1,24 +1,33 @@
-import React, { useEffect, useState } from 'react';
-import { FaShoppingBag, FaTruck, FaCreditCard, FaMapMarkerAlt } from 'react-icons/fa';
+import React, { useEffect, useState } from "react";
+import {
+  FaShoppingBag,
+  FaTruck,
+  FaCreditCard,
+  FaMapMarkerAlt,
+} from "react-icons/fa";
+import { ordenService } from "../../../services/ordenService";
 
 const HistorialPedidos = () => {
   const [ordenes, setOrdenes] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    try {
-      const ordenesGuardadas = JSON.parse(localStorage.getItem('ordenes') || '[]');
-      // Ordenar por fecha, más recientes primero
-      const ordenesOrdenadas = ordenesGuardadas.sort((a, b) => 
-        new Date(b.fecha) - new Date(a.fecha)
-      );
-      setOrdenes(ordenesOrdenadas);
-    } catch (error) {
-      console.error('Error al cargar las órdenes:', error);
-      setOrdenes([]);
-    } finally {
-      setLoading(false);
-    }
+    const fetchOrdenes = async () => {
+      try {
+        const usuario = JSON.parse(localStorage.getItem("usuario"));
+        if (usuario && usuario.id) {
+          const data = await ordenService.obtenerOrdenesPorUsuario(usuario.id);
+          setOrdenes(data);
+        }
+      } catch (error) {
+        console.error("Error al cargar las órdenes:", error);
+        setOrdenes([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrdenes();
   }, []);
 
   if (loading) {
@@ -40,7 +49,9 @@ const HistorialPedidos = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6 text-center">Historial de Pedidos</h1>
+      <h1 className="text-2xl font-bold mb-6 text-center">
+        Historial de Pedidos
+      </h1>
       <div className="space-y-6">
         {ordenes.map((orden) => (
           <div key={orden.id} className="bg-white rounded-lg shadow-md p-6">
@@ -50,18 +61,18 @@ const HistorialPedidos = () => {
                   Orden #{orden.id}
                 </div>
                 <div className="font-semibold">
-                  {new Date(orden.fecha).toLocaleDateString('es-ES', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
+                  {new Date(orden.createdAt).toLocaleDateString("es-ES", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
                   })}
                 </div>
               </div>
               <div className="text-right">
                 <div className="font-bold text-[#FE624C] text-xl">
-                  S/ {Number(orden.resumenCompra?.total || 0).toFixed(2)}
+                  S/ {Number(orden.total || 0).toFixed(2)}
                 </div>
               </div>
             </div>
@@ -72,10 +83,7 @@ const HistorialPedidos = () => {
                 <div>
                   <div className="font-semibold">Dirección de Envío</div>
                   <div className="text-sm text-gray-600">
-                    {orden.datosEnvio?.nombre} {orden.datosEnvio?.apellido}<br />
-                    {orden.datosEnvio?.direccion}<br />
-                    {orden.datosEnvio?.ciudad}, {orden.datosEnvio?.departamento}<br />
-                    {orden.datosEnvio?.codigoPostal}
+                    {orden.direccionEnvio}
                   </div>
                 </div>
               </div>
@@ -83,7 +91,9 @@ const HistorialPedidos = () => {
                 <FaCreditCard className="text-[#FE624C] mt-1" />
                 <div>
                   <div className="font-semibold">Método de Pago</div>
-                  <div className="text-sm text-gray-600">{orden.metodoPago || 'No especificado'}</div>
+                  <div className="text-sm text-gray-600">
+                    {orden.metodoPago || "No especificado"}
+                  </div>
                 </div>
               </div>
             </div>
@@ -91,10 +101,24 @@ const HistorialPedidos = () => {
             <div className="border-t border-gray-200 pt-4">
               <div className="font-semibold mb-2">Productos</div>
               <div className="space-y-2">
-                {orden.resumenCompra?.productos?.map((producto, index) => (
-                  <div key={index} className="flex justify-between text-sm">
-                    <span>{producto.nombre} x{producto.cantidad}</span>
-                    <span>S/ {Number(producto.precio).toFixed(2)}</span>
+                {orden.items?.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex justify-between items-center text-sm"
+                  >
+                    <div className="flex items-center">
+                      <img
+                        src={item.producto.imagenUrl}
+                        alt={item.producto.nombre}
+                        className="w-12 h-12 object-cover mr-4 rounded"
+                      />
+                      <div>
+                        <span>
+                          {item.producto.nombre} x{item.cantidad}
+                        </span>
+                      </div>
+                    </div>
+                    <span>S/ {Number(item.precioUnitario).toFixed(2)}</span>
                   </div>
                 ))}
               </div>

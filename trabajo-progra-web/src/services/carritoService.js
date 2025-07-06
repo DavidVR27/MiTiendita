@@ -135,8 +135,22 @@ export const carritoService = {
     return carrito ? JSON.parse(carrito) : [];
   },
 
-  // 🗑️ Vaciar el carrito en localStorage
-  vaciarCarrito: () => {
-    localStorage.removeItem('carrito');
+  // 🗑️ Vaciar el carrito en la base de datos y localStorage
+  vaciarCarrito: async (usuarioId) => {
+    try {
+      const res = await fetch(`${API_URL}/vaciar/${usuarioId}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Error al vaciar el carrito");
+      }
+      // También limpiar de localStorage por si acaso
+      localStorage.removeItem("carrito");
+      return { success: true };
+    } catch (err) {
+      console.error("Error en vaciarCarrito:", err);
+      throw err;
+    }
   },
 };

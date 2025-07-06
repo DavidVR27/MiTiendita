@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Boton from '../../../Components/Boton';
-import { FaUser, FaShoppingCart, FaCheck, FaTruck, FaCreditCard } from 'react-icons/fa';
+import { FaUser, FaShoppingCart, FaTruck, FaCreditCard } from 'react-icons/fa';
+import { carritoService } from '../../../services/carritoService';
+import { useAuth } from '../../../context/AuthContext';
 
 const Direccion = () => {
     const navigate = useNavigate();
-    // Se guarda la informacion del formulario en un estado
+    const { usuario } = useAuth();
+
     const [formData, setFormData] = useState({
         nombre: '',
         apellido: '',
@@ -15,48 +18,48 @@ const Direccion = () => {
         codigoPostal: '',
         telefono: ''
     });
+
     const [total, setTotal] = useState(0);
     const [totalDescuento, setTotalDescuento] = useState(0);
     const [totalProductos, setTotalProductos] = useState(0);
 
     useEffect(() => {
-        // Obtener datos del carrito
-        const carrito = JSON.parse(localStorage.getItem('carrito') || '[]'); // Se lee del localStorage y se convierte de texto a objeto
-        const totalCarrito = carrito.reduce((acc, item) => acc + (item.precio * item.cantidad), 0); // Se calcula el total del carrito
-        const descuentoCarrito = carrito.reduce((acc, item) => { 
-            if (item.descuento) {
-                return acc + (item.precio * item.descuento * item.cantidad); // Se calcula el descuento del carrito
+        const cargarCarrito = async () => {
+            if (!usuario || !usuario.id) return;
+
+            try {
+                const carrito = await carritoService.obtenerCarritoDesdeAPI(usuario.id);
+
+                const totalCarrito = carrito.reduce((acc, item) => {
+                    const precio = parseFloat(item.Producto?.precio || 0);
+                    return acc + (precio * item.cantidad);
+                }, 0);
+
+                const descuentoCarrito = carrito.reduce((acc, item) => {
+                    const precio = parseFloat(item.Producto?.precio || 0);
+                    const descuento = parseFloat(item.Producto?.descuento || 0);
+                    return acc + (precio * descuento * item.cantidad);
+                }, 0);
+
+                setTotal(totalCarrito);
+                setTotalDescuento(descuentoCarrito);
+                setTotalProductos(carrito.length);
+            } catch (error) {
+                console.error("Error al obtener el carrito:", error);
             }
-            return acc;
-        }, 0);
-        
-        setTotal(totalCarrito);
-        setTotalDescuento(descuentoCarrito);
-        setTotalProductos(carrito.length);
-    }, []);
+        };
+
+        cargarCarrito();
+    }, [usuario]);
 
     const handleInputChange = (e) => {
-        // Obtener el nombre y valor del campo que se está escribiendo
         const nombreCampo = e.target.name;
         const valorCampo = e.target.value;
 
-        // Si es código postal o teléfono, solo permitir números
         if (nombreCampo === 'codigoPostal' || nombreCampo === 'telefono') {
-            // Verificar si el valor contiene solo números
-            let esSoloNumeros = true;
-            for (let i = 0; i < valorCampo.length; i++) {
-                if (isNaN(valorCampo[i])) {
-                    esSoloNumeros = false;
-                    break;
-                }
-            }
-            // Si no son solo números, no actualizar el campo
-            if (!esSoloNumeros) {
-                return;
-            }
+            if (!/^\d*$/.test(valorCampo)) return;
         }
 
-        // Actualizar el estado del formulario
         setFormData({
             ...formData,
             [nombreCampo]: valorCampo
@@ -64,40 +67,32 @@ const Direccion = () => {
     };
 
     const validarFormulario = () => {
-        // Lista de campos que deben estar llenos
-        const camposObligatorios = ['nombre', 'apellido', 'ciudad', 'departamento', 'direccion', 'codigoPostal', 'telefono'];
-        
-        // Revisar cada campo obligatorio
-        for (let campo of camposObligatorios) {
-            // Si el campo está vacío o solo tiene espacios
+        const campos = ['nombre', 'apellido', 'ciudad', 'departamento', 'direccion', 'codigoPostal', 'telefono'];
+
+        for (let campo of campos) {
             if (!formData[campo] || formData[campo].trim() === '') {
                 alert('Por favor complete todos los campos requeridos');
                 return false;
             }
         }
 
-        // Validar código postal (debe tener 6 números)
         if (formData.codigoPostal.length !== 6) {
             alert('El código postal debe tener 6 números');
             return false;
         }
 
-        // Validar teléfono (debe tener 9 números)
         if (formData.telefono.length !== 9) {
             alert('El teléfono debe tener 9 números');
             return false;
         }
 
-        // Si todo está bien, retornar true
         return true;
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
         if (validarFormulario()) {
-            // Guardar datos de dirección en localStorage
             localStorage.setItem('datosEnvio', JSON.stringify(formData));
-            // Navegar a la página de método de pago
             navigate('/tienda/checkout/pago');
         }
     };
@@ -236,6 +231,12 @@ const Direccion = () => {
                                     />
                                 </div>
                             </div>
+                            <div className="mt-3">
+                                <Boton
+                                    texto="Seleccionar Método de Pago"
+                                    type="submit"
+                                />
+                            </div>
                         </form>
                     </div>
                 </div>
@@ -264,12 +265,6 @@ const Direccion = () => {
                             <div className="flex justify-between font-semibold text-base">
                                 <span>TOTAL</span>
                                 <span>S/ {(total - totalDescuento).toFixed(2)}</span>
-                            </div>
-                            <div className="mt-3">
-                                <Boton
-                                    texto="Seleccionar Método de Pago"
-                                    onClick={handleSubmit}
-                                />
                             </div>
                         </div>
                     </div>

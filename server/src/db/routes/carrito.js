@@ -99,4 +99,21 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
+// DELETE /api/carrito/vaciar/:usuarioId → Vaciar el carrito de un usuario
+router.delete("/vaciar/:usuarioId", async (req, res) => {
+  try {
+    const { usuarioId } = req.params;
+    const result = await ItemCarrito.destroy({
+      where: { usuarioId: usuarioId, guardado: false },
+    });
+    if (result === 0) {
+      return res.status(404).json({ message: "No se encontraron items en el carrito para vaciar o el carrito ya estaba vacío." });
+    }
+    res.status(200).json({ message: `Carrito vaciado exitosamente. Se eliminaron ${result} items.` });
+  } catch (err) {
+    console.error("Error al vaciar el carrito:", err);
+    res.status(500).json({ error: "Error al vaciar el carrito" });
+  }
+});
+
 module.exports = router;

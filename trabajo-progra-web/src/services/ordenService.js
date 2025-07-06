@@ -20,4 +20,20 @@ export const ordenService = {
       throw err;
     }
   },
+
+  obtenerOrdenesPorUsuario: async (usuarioId) => {
+    try {
+      const res = await fetch(`${API_URL}/usuario/${usuarioId}`);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(
+          errorData.error || "Error al obtener las órdenes del usuario"
+        );
+      }
+      return await res.json();
+    } catch (err) {
+      console.error("Error en obtenerOrdenesPorUsuario:", err);
+      throw err;
+    }
+  },
 };
