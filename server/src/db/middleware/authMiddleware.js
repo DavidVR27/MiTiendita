@@ -7,7 +7,7 @@ function authMiddleware(req, res, next) {
     return res.status(401).json({ message: 'Token no proporcionado.' });
   }
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, 'mi_clave_secreta_para_curso_2024');
     req.user = decoded; // { id, email, rol }
     next();
   } catch (err) {

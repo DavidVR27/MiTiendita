@@ -17,14 +17,18 @@ module.exports = {
       apellido: 'Eduardo',
       email: 'xamira.eduardo@mitiendita.com',
       password: '123456',
-      rol: 'admin'
+      rol: 'admin',
+      createdAt: new Date(),
+      updatedAt: new Date()
     },
     {
       nombre: 'Zera',
       apellido: 'Cortina',
       email: 'zera.cortina@mitiendita.com',
       password: '123456',
-      rol: 'user'
+      rol: 'user',
+      createdAt: new Date(),
+      updatedAt: new Date()
     }
   
   

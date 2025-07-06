@@ -2,11 +2,17 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { Usuario } = require('../models');
+const authMiddleware = require('../middleware/authMiddleware');
 const router = express.Router();
 
-// POST /auth/register
+// POST /users/register
 router.post('/register', async (req, res) => {
   try {
+    // Verificar que req.body existe
+    if (!req.body) {
+      return res.status(400).json({ message: 'Datos JSON requeridos. Asegúrate de enviar Content-Type: application/json' });
+    }
+    
     const { nombre, apellido, email, password, rol } = req.body;
     if (!nombre || !apellido || !email || !password) {
       return res.status(400).json({ message: 'Todos los campos son obligatorios.' });
@@ -15,20 +21,16 @@ router.post('/register', async (req, res) => {
     if (existe) {
       return res.status(409).json({ message: 'El email ya está registrado.' });
     }
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const usuario = await Usuario.create({
+
+      const usuario = await Usuario.create({
       nombre,
       apellido,
       email,
-      password: hashedPassword,
-      rol: rol || 'user',
+      password, 
+      rol,
       activo: true
     });
-    const token = jwt.sign(
-      { id: usuario.id, email: usuario.email, rol: usuario.rol },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
+
     res.status(201).json({
       nombre: nombre,
       apellido: apellido,
@@ -36,16 +38,15 @@ router.post('/register', async (req, res) => {
       rol: rol,
       activo: true,
       message: 'Usuario registrado exitosamente.',
-      token
     });
-    console.log('nombre:', nombre ,'apellido:', apellido,'email:', email,'rol:', rol,'token:', token);
+    console.log('nombre:', nombre ,'apellido:', apellido,'email:', email,'rol:', rol);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Error en el registro.' });
   }
 });
 
-// POST /auth/login
+// POST /users/login
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -56,18 +57,11 @@ router.post('/login', async (req, res) => {
     if (!usuario) {
       return res.status(401).json({ message: 'Credenciales inválidas.' });
     }
-    const passwordValida = await bcrypt.compare(password, usuario.password);
-    if (!passwordValida) {
+    if (password !== usuario.password) {
       return res.status(401).json({ message: 'Credenciales inválidas.' });
     }
-    const token = jwt.sign(
-      { id: usuario.id, email: usuario.email, rol: usuario.rol },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
     res.json({
-      message: 'Login exitoso.',
-      token
+      message: 'Login exitoso.'
     });
   } catch (error) {
     console.error(error);
@@ -75,7 +69,7 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// POST /auth/forgot-password
+// POST /users/forgot-password
 router.post('/forgot-password', async (req, res) => {
   try {
     const { email } = req.body;
@@ -88,16 +82,146 @@ router.post('/forgot-password', async (req, res) => {
     }
     const resetToken = jwt.sign(
       { id: usuario.id, email: usuario.email },
-      process.env.JWT_SECRET,
+      'mi_clave_secreta_para_curso_2024',
       { expiresIn: '1h' }
     );
     res.json({
-      message: 'Token de recuperación generado. (En producción se enviaría por email)',
+      message: 'Token de recuperación generado.',
       resetToken
     });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Error al generar el token de recuperación.' });
+  }
+});
+
+
+// PUT /users/:id/change-password usar el token de reset
+router.put('/:id/change-password', authMiddleware, async (req, res) => {
+  try {
+    // Verificar que req.body existe
+    if (!req.body) {
+      return res.status(400).json({ message: 'Datos JSON requeridos. Asegúrate de enviar Content-Type: application/json' });
+    }
+    
+    const { id } = req.params;
+    const { oldPassword, newPassword } = req.body;
+    
+    // Validar que se proporcionen ambas contraseñas
+    if (!oldPassword || !newPassword) {
+      return res.status(400).json({ message: 'La contraseña anterior y la nueva contraseña son obligatorias.' });
+    }
+
+    
+
+    // Buscar el usuario
+    const usuario = await Usuario.findByPk(id);
+    if (!usuario) {
+      return res.status(404).json({ message: 'Usuario no encontrado.' });
+    }
+    
+    // Verificar que la contraseña anterior sea correcta
+    if (oldPassword !== usuario.password) {
+      return res.status(401).json({ message: 'La contraseña anterior es incorrecta.' });
+    }
+    
+    // Actualizar la contraseña (sin hashear)
+    usuario.password = newPassword;
+    await usuario.save();
+    
+    res.json({ message: 'Contraseña actualizada exitosamente.' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error al cambiar la contraseña.' });
+  }
+});
+
+// PUT /users/change-password (usa token de recuperación)
+router.put('/change-password', async (req, res) => {
+  try {
+    // Verificar que req.body existe
+    if (!req.body) {
+      return res.status(400).json({ message: 'Datos JSON requeridos. Asegúrate de enviar Content-Type: application/json' });
+    }
+    
+    const { token, nuevaContrasenia } = req.body;
+    
+    // Validar que se proporcionen token y nueva contraseña
+    if (!token || !nuevaContrasenia) {
+      return res.status(400).json({ message: 'Token y nueva contraseña son obligatorios.' });
+    }
+    
+    // Verificar el token de recuperación
+    let payload;
+    try {
+      payload = jwt.verify(token, 'mi_clave_secreta_para_curso_2024');
+    } catch (err) {
+      return res.status(401).json({ message: 'Token inválido o expirado.' });
+    }
+    
+    // Buscar el usuario usando el ID del token
+    const usuario = await Usuario.findByPk(payload.id);
+    if (!usuario) {
+      return res.status(404).json({ message: 'Usuario no encontrado.' });
+    }
+    
+    // Actualizar la contraseña (sin hashear)
+    usuario.password = nuevaContrasenia;
+    await usuario.save();
+    
+    res.json({ message: 'Contraseña actualizada exitosamente.' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error al cambiar la contraseña.' });
+  }
+});
+
+// PUT /users/:id (actualiza datos excepto contraseña)
+router.put('/:id/update', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { nombre, apellido, email, rol, activo } = req.body;
+
+    // Buscar el usuario
+    const usuario = await Usuario.findByPk(id);
+    if (!usuario) {
+      return res.status(404).json({ message: 'Usuario no encontrado.' });
+    }
+
+    // Actualizar solo los campos permitidos
+    if (nombre !== undefined) usuario.nombre = nombre;
+    if (apellido !== undefined) usuario.apellido = apellido;
+    if (email !== undefined) usuario.email = email;
+    if (rol !== undefined) usuario.rol = rol;
+    if (activo !== undefined) usuario.activo = activo;
+
+    await usuario.save();
+
+    res.json({ message: 'Usuario actualizado exitosamente.' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error al actualizar el usuario.' });
+  }
+});
+
+// GET /users/:id/delete
+router.get('/:id/delete', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Buscar el usuario
+    const usuario = await Usuario.findByPk(id);
+    if (!usuario) {
+      return res.status(404).json({ message: 'Usuario no encontrado.' });
+    }
+    
+    // Eliminar el usuario
+    await usuario.destroy();
+    
+    res.json({ message: 'Usuario eliminado exitosamente.' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error al eliminar el usuario.' });
   }
 });
 
