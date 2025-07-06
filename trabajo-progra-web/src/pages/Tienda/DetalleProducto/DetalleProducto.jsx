@@ -2,9 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { productoService } from '../../../services/productoService';
 import { carritoService } from '../../../services/carritoService';
+import { useAuth } from '../../../context/AuthContext';
 import './DetalleProducto.css';
 
+
 const DetalleProducto = () => {
+  const { usuario } = useAuth();//Agregado por David Ed
   const { id } = useParams();
   const [producto, setProducto] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -32,13 +35,21 @@ const DetalleProducto = () => {
 
     cargarProducto();
   }, [id]);
+  //Arregle esto -- David E
+  const agregarAlCarrito = async () => {
+  if (!usuario) {
+    alert("Debes iniciar sesión para agregar productos al carrito");
+    return;
+  }
+  try {
+    await carritoService.agregarProducto(producto, cantidad, usuario.id);
+    alert('Producto agregado al carrito');
+  } catch (err) {
+    alert('Hubo un error al agregar el producto');
+    console.error(err);
+  }
+};
 
-  const agregarAlCarrito = () => {
-    if (producto) {
-      carritoService.agregarProducto(producto, cantidad);
-      alert('Producto agregado al carrito');
-    }
-  };
 
   if (loading) {
     return <div className="loading">Cargando producto...</div>;

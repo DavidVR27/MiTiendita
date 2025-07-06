@@ -128,12 +128,17 @@ export const carritoService = {
   },
 
   // --- Funciones para Local Storage ---
-
+  // Eliminado por requerimiento de proyecto:
+  // Ya no se permite el uso de localStorage para guardar datos de carrito.
+  // La fuente oficial de datos debe ser PostgreSQL vía API backend.
+  // Correccion hecha por david e
+  /*
   // 📦 Obtener el carrito desde localStorage
   obtenerCarrito: () => {
     const carrito = localStorage.getItem('carrito');
     return carrito ? JSON.parse(carrito) : [];
   },
+  */
 
   // 🗑️ Vaciar el carrito en la base de datos y localStorage
   vaciarCarrito: async (usuarioId) => {
