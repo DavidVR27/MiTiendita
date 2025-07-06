@@ -17,6 +17,10 @@ module.exports = (sequelize, DataTypes) => {
       });
     }
   }
+  Categoria.associate = models => {
+    Categoria.belongsToMany(models.Producto, { through: 'CategoriaProducto' });
+  };
+  
   Categoria.init({
     nombre: DataTypes.STRING,
     descripcion: DataTypes.STRING,

@@ -16,7 +16,7 @@ module.exports = (sequelize, DataTypes) => {
     {
       usuarioId: DataTypes.INTEGER,
       productoId: DataTypes.INTEGER,
-      cantidad: DataTypes.INTEGER,
+      cantidad: DataTypes.BIGINT,
       guardado: DataTypes.BOOLEAN,
     },
     {

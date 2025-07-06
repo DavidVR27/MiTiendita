@@ -53,7 +53,7 @@ export const carritoService = {
   },
 
   // 🔁 Actualizar la cantidad de un producto en el carrito
-  actualizarCantidad: async (itemCarritoId, nuevaCantidad) => {
+  actualizarCantidadEnAPI: async (itemCarritoId, nuevaCantidad) => {
     try {
       const res = await fetch(`${API_URL}/${itemCarritoId}`, {
         method: "PUT",
@@ -65,13 +65,13 @@ export const carritoService = {
       if (!res.ok) throw new Error("Error al actualizar cantidad");
       return await res.json();
     } catch (err) {
-      console.error("Error en actualizarCantidad:", err);
+      console.error("Error en actualizarCantidadEnAPI:", err);
       return null;
     }
   },
 
   // 📥 Marcar producto como guardado para después
-  guardarProducto: async (itemCarritoId) => {
+  marcarComoGuardadoEnAPI: async (itemCarritoId) => {
     try {
       const res = await fetch(`${API_URL}/${itemCarritoId}/guardar`, {
         method: "PUT",
@@ -79,21 +79,22 @@ export const carritoService = {
       if (!res.ok) throw new Error("Error al guardar producto");
       return await res.json();
     } catch (err) {
-      console.error("Error en guardarProducto:", err);
+      console.error("Error en marcarComoGuardadoEnAPI:", err);
       return null;
     }
   },
 
   // ❌ Eliminar producto del carrito
-  eliminarProductoDelCarrito: async (itemCarritoId) => {
+  eliminarDeAPI: async (itemCarritoId) => {
     try {
       const res = await fetch(`${API_URL}/${itemCarritoId}`, {
         method: "DELETE",
       });
       if (!res.ok) throw new Error("Error al eliminar producto");
-      return await res.json();
+      // DELETE no suele devolver contenido, así que no esperamos un json.
+      return { success: true }; 
     } catch (err) {
-      console.error("Error en eliminarProductoDelCarrito:", err);
+      console.error("Error en eliminarDeAPI:", err);
       return null;
     }
   },
@@ -123,6 +124,33 @@ export const carritoService = {
     } catch (err) {
       console.error("Error en eliminarGuardado:", err);
       return null;
+    }
+  },
+
+  // --- Funciones para Local Storage ---
+
+  // 📦 Obtener el carrito desde localStorage
+  obtenerCarrito: () => {
+    const carrito = localStorage.getItem('carrito');
+    return carrito ? JSON.parse(carrito) : [];
+  },
+
+  // 🗑️ Vaciar el carrito en la base de datos y localStorage
+  vaciarCarrito: async (usuarioId) => {
+    try {
+      const res = await fetch(`${API_URL}/vaciar/${usuarioId}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Error al vaciar el carrito");
+      }
+      // También limpiar de localStorage por si acaso
+      localStorage.removeItem("carrito");
+      return { success: true };
+    } catch (err) {
+      console.error("Error en vaciarCarrito:", err);
+      throw err;
     }
   },
 };

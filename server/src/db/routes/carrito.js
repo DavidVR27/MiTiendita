@@ -35,12 +35,22 @@ router.get("/:usuarioId/guardados", async (req, res) => {
 router.post("/", async (req, res) => {
   try {
     const { usuarioId, productoId, cantidad } = req.body;
-    const item = await ItemCarrito.create({
-      usuarioId,
-      productoId,
-      cantidad,
-      guardado: false,
+
+    // Buscar si ya existe un item para este usuario y producto
+    const [item, creado] = await ItemCarrito.findOrCreate({
+      where: { usuarioId, productoId, guardado: false },
+      defaults: { cantidad: cantidad },
     });
+
+    console.log("Item:", item.toJSON());
+    console.log("Creado:", creado);
+
+    // Si no fue creado, significa que ya existía, entonces actualizamos la cantidad
+    if (!creado) {
+      item.cantidad += cantidad;
+      await item.save();
+    }
+
     res.status(201).json(item);
   } catch (err) {
     console.error("Error al agregar producto al carrito:", err);
@@ -86,6 +96,23 @@ router.delete("/:id", async (req, res) => {
   } catch (err) {
     console.error("Error al eliminar producto del carrito:", err);
     res.status(500).json({ error: "Error al eliminar producto del carrito" });
+  }
+});
+
+// DELETE /api/carrito/vaciar/:usuarioId → Vaciar el carrito de un usuario
+router.delete("/vaciar/:usuarioId", async (req, res) => {
+  try {
+    const { usuarioId } = req.params;
+    const result = await ItemCarrito.destroy({
+      where: { usuarioId: usuarioId, guardado: false },
+    });
+    if (result === 0) {
+      return res.status(404).json({ message: "No se encontraron items en el carrito para vaciar o el carrito ya estaba vacío." });
+    }
+    res.status(200).json({ message: `Carrito vaciado exitosamente. Se eliminaron ${result} items.` });
+  } catch (err) {
+    console.error("Error al vaciar el carrito:", err);
+    res.status(500).json({ error: "Error al vaciar el carrito" });
   }
 });
 
