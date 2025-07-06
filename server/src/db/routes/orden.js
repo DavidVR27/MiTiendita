@@ -186,4 +186,114 @@ router.post("/", async (req, res) => {
   }
 });
 
+// Obtener todas las órdenes del usuario autenticado
+router.get("/user", async (req, res) => {
+  // Se espera que el usuarioId venga por query o por autenticación
+  const usuarioId = req.query.usuarioId || req.usuarioId;
+  if (!usuarioId) {
+    return res.status(400).json({ error: "Usuario no autenticado" });
+  }
+  try {
+    const ordenes = await Orden.findAll({
+      where: { usuarioId },
+      include: [
+        {
+          model: ItemOrden,
+          as: "items",
+          include: [
+            {
+              model: Producto,
+              as: "producto",
+            },
+          ],
+        },
+      ],
+      order: [["createdAt", "DESC"]],
+    });
+    res.json(ordenes);
+  } catch (error) {
+    console.error("Error al obtener las órdenes del usuario:", error);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
+});
+
+// Obtener detalle de una orden por ID
+router.get("/:id", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const orden = await Orden.findByPk(id, {
+      include: [
+        {
+          model: ItemOrden,
+          as: "items",
+          include: [
+            {
+              model: Producto,
+              as: "producto",
+            },
+          ],
+        },
+      ],
+    });
+    if (!orden) {
+      return res.status(404).json({ error: "Orden no encontrada" });
+    }
+    res.json(orden);
+  } catch (error) {
+    console.error("Error al obtener el detalle de la orden:", error);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
+});
+
+// Cancelar una orden
+router.put("/:id/cancel", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const orden = await Orden.findByPk(id);
+    if (!orden) {
+      return res.status(404).json({ error: "Orden no encontrada" });
+    }
+    if (orden.estado === "Cancelada") {
+      return res.status(400).json({ error: "La orden ya está cancelada" });
+    }
+    orden.estado = "Cancelada";
+    await orden.save();
+    res.json({ success: true, mensaje: "Orden cancelada exitosamente", orden });
+  } catch (error) {
+    console.error("Error al cancelar la orden:", error);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
+});
+
+// Página de pedido completo (devolver datos si la orden está completada)
+router.get("/:id/complete", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const orden = await Orden.findByPk(id, {
+      include: [
+        {
+          model: ItemOrden,
+          as: "items",
+          include: [
+            {
+              model: Producto,
+              as: "producto",
+            },
+          ],
+        },
+      ],
+    });
+    if (!orden) {
+      return res.status(404).json({ error: "Orden no encontrada" });
+    }
+    if (orden.estado !== "Completada") {
+      return res.status(400).json({ error: "La orden aún no está completada" });
+    }
+    res.json(orden);
+  } catch (error) {
+    console.error("Error al obtener la orden completada:", error);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
+});
+
 module.exports = router;
