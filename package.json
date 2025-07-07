@@ -17,5 +17,8 @@
     "url": "https://github.com/DavidVR27/MiTiendita/issues"
   },
   "homepage": "https://github.com/DavidVR27/MiTiendita#readme",
-  "description": ""
+  "description": "",
+  "dependencies": {
+    "bcrypt": "^6.0.0"
+  }
 }
