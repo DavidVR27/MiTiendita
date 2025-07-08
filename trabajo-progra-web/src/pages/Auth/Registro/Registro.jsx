@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Boton from "../../../Components/Misagel/Boton";
 import Heading from "../../../Components/Misagel/Heading";
 import { useAuth } from "../../../context/AuthContext";
+import { usuarioService } from "../../../services/usuarioService";
 
 const Registro = () => {
   const navigate = useNavigate();
@@ -19,54 +20,52 @@ const Registro = () => {
     setError("");
 
     try {
-      // VALIDAR EL NOMBRE COMPLETO QUE NO SEA VACIO
-      if (nombreCompleto === "") {
-        setError("Por favor, ingresa tu nombre completo.");
+      // VALIDACIONES
+      if (!nombreCompleto.trim() || !correoElectronico.trim() || !contrasenia) {
+        setError("Todos los campos son obligatorios.");
         return;
       }
-      // VALIDAR QUE EL CORREO SEA UN CORREO VALIDO
       const patronDeCorreoElectronico = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!patronDeCorreoElectronico.test(correoElectronico)) {
         setError("Por favor, ingresa un correo electrónico válido.");
         return;
       }
-      // VALIDAR QUE LA CONTRASEÑA TENGA AL MENOS 8 CARACTERES
       if (contrasenia.length < 8) {
         setError("La contraseña debe tener al menos 8 caracteres.");
         return;
       }
-      // VALIDAR QUE LA CONTRASEÑA Y LA CONFIRMACION DE LA CONTRASEÑA COINCIDAN
       if (contrasenia !== confirmarContrasenia) {
         setError("Las contraseñas no coinciden");
         return;
       }
 
-      // VALIDAR QUE EL CORREO NO ESTE REGISTRADO
-      const usuarios = JSON.parse(localStorage.getItem("usuarios") || "[]");
-      if (usuarios.some((usuario) => usuario.correo === correoElectronico)) {
-        setError("El correo ya está registrado. Usa otro o inicia sesión.");
-        return;
-      }
+      const nombreArray = nombreCompleto.trim().split(' ');
+      const nombre = nombreArray[0];
+      const apellido = nombreArray.slice(1).join(' ');
 
-      const usuario = {
-        id: Date.now().toString(),
-        nombre: nombreCompleto,
-        correo: correoElectronico,
+      // 1. REGISTRAR AL USUARIO USANDO EL SERVICIO
+      await usuarioService.register({
+        nombre,
+        apellido: apellido || nombre,
+        email: correoElectronico,
         password: contrasenia,
-      };
+      });
 
-      // AGREGAR EL USUARIO A LA LISTA DE USUARIOS
-      usuarios.push(usuario);
-      localStorage.setItem("usuarios", JSON.stringify(usuarios));
+      // 2. INICIAR SESIÓN AUTOMÁTICAMENTE
+      const loginData = await usuarioService.login({
+        email: correoElectronico,
+        password: contrasenia,
+      });
 
-      // Iniciar sesión automáticamente con el nuevo usuario
-      await login(usuario);
+      // 3. GUARDAR EL ESTADO DE AUTENTICACIÓN USANDO EL CONTEXTO
+      login(loginData.usuario);
 
-      alert("Registro exitoso. Bienvenido!");
-      navigate("/", { replace: true });
-    } catch (error) {
-      console.error("Error durante el registro:", error);
-      setError("Hubo un error durante el registro. Por favor, intenta nuevamente.");
+      alert("Registro exitoso. ¡Bienvenido!");
+      navigate("/", { replace: true }); // Redirigir al inicio
+
+    } catch (err) {
+      console.error("Error durante el registro:", err);
+      setError(err.message || "Hubo un error durante el registro. Por favor, intenta nuevamente.");
     }
   };
 

@@ -28,7 +28,7 @@ router.get("/:id", async (req, res) => {
 // Crear producto
 router.post("/", async (req, res) => {
   try {
-    const nuevoProducto = await Producto.create(req.body);
+    const nuevoProducto = await Producto.create({ ...req.body, activo: true });
     res.status(201).json(nuevoProducto);
   } catch (err) {
     console.error("Error al crear producto:", err);

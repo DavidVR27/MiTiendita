@@ -222,7 +222,7 @@ router.get("/user", async (req, res) => {
   }
 });
 
-// Obtener detalle de una orden por ID
+// Obtener detalle de una orden por su ID
 router.get("/:id", async (req, res) => {
   const { id } = req.params;
   try {
